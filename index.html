@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="description" content="Track your daily habits and build streaks across all devices" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Habits" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Habit Tracker</title>
+</head>
+<body>
+
+  <!-- ─── App Shell ───────────────────────────────────────────────────── -->
+  <div id="app" class="app" hidden>
+
+    <!-- Sidebar (desktop) / Bottom nav (mobile) -->
+    <nav class="nav" id="main-nav" role="navigation" aria-label="Main navigation">
+      <!-- Logo (sidebar only) -->
+      <div class="nav-logo" aria-hidden="true">
+        <img src="icon.svg" alt="" width="32" height="32" />
+        <span>Habits</span>
+      </div>
+
+      <button class="nav-item active" data-view="today" aria-label="Today's habits" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">☀️</span>
+        <span class="nav-label">Today</span>
+      </button>
+      <button class="nav-item" data-view="history" aria-label="Habit history">
+        <span class="nav-icon" aria-hidden="true">📅</span>
+        <span class="nav-label">History</span>
+      </button>
+      <button class="nav-item" data-view="habits" aria-label="Manage habits">
+        <span class="nav-icon" aria-hidden="true">✏️</span>
+        <span class="nav-label">Habits</span>
+      </button>
+      <button class="nav-item" data-view="settings" aria-label="Settings">
+        <span class="nav-icon" aria-hidden="true">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+
+    <!-- Main content area -->
+    <main class="main" id="main-content">
+
+      <!-- ── Today View ──────────────────────────────────────────────── -->
+      <section id="view-today" class="view active" aria-label="Today's habits">
+        <header class="view-header">
+          <div>
+            <h1 id="today-date-label" class="view-title">Today</h1>
+            <p id="today-sub" class="view-subtitle">Loading...</p>
+          </div>
+          <div class="today-progress-ring" aria-hidden="true">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle id="progress-ring-circle" cx="28" cy="28" r="22" fill="none"
+                stroke="var(--primary)" stroke-width="5"
+                stroke-dasharray="138.23" stroke-dashoffset="138.23"
+                stroke-linecap="round"
+                transform="rotate(-90 28 28)"/>
+            </svg>
+            <span id="progress-ring-text" class="progress-ring-text">0%</span>
+          </div>
+        </header>
+
+        <!-- Progress bar -->
+        <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress-bar-wrap">
+          <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width:0%"></div>
+          </div>
+          <span id="progress-bar-label" class="progress-bar-label">0 / 0 done</span>
+        </div>
+
+        <!-- Habit groups by time of day -->
+        <div id="today-habit-groups" class="habit-groups"></div>
+
+        <!-- Empty state -->
+        <div id="today-empty" class="empty-state" hidden>
+          <p class="empty-icon" aria-hidden="true">🌱</p>
+          <p class="empty-title">No habits today</p>
+          <p class="empty-sub">Go to <strong>Habits</strong> to add your first habit</p>
+        </div>
+      </section>
+
+      <!-- ── History View ────────────────────────────────────────────── -->
+      <section id="view-history" class="view" aria-label="Habit history" hidden>
+        <header class="view-header">
+          <h1 class="view-title">History</h1>
+        </header>
+
+        <div class="calendar-nav" role="group" aria-label="Month navigation">
+          <button id="cal-prev" class="icon-btn" aria-label="Previous month">&#8249;</button>
+          <span id="cal-month-label" class="cal-month-label">March 2026</span>
+          <button id="cal-next" class="icon-btn" aria-label="Next month">&#8250;</button>
+        </div>
+
+        <div class="calendar-grid" id="calendar-grid" role="grid" aria-label="Calendar">
+          <div class="cal-day-header" aria-hidden="true">S</div>
+          <div class="cal-day-header" aria-hidden="true">M</div>
+          <div class="cal-day-header" aria-hidden="true">T</div>
+          <div class="cal-day-header" aria-hidden="true">W</div>
+          <div class="cal-day-header" aria-hidden="true">T</div>
+          <div class="cal-day-header" aria-hidden="true">F</div>
+          <div class="cal-day-header" aria-hidden="true">S</div>
+        </div>
+
+        <!-- Day detail panel -->
+        <div id="day-detail" class="day-detail" hidden>
+          <h2 id="day-detail-title" class="day-detail-title"></h2>
+          <div id="day-detail-list" class="day-detail-list"></div>
+        </div>
+      </section>
+
+      <!-- ── Habits (Manage) View ────────────────────────────────────── -->
+      <section id="view-habits" class="view" aria-label="Manage habits" hidden>
+        <header class="view-header">
+          <h1 class="view-title">My Habits</h1>
+          <button id="add-habit-btn" class="btn btn-primary" aria-label="Add new habit">
+            + Add Habit
+          </button>
+        </header>
+
+        <div id="habits-list" class="habits-manage-list"></div>
+
+        <div id="habits-empty" class="empty-state" hidden>
+          <p class="empty-icon" aria-hidden="true">✨</p>
+          <p class="empty-title">No habits yet</p>
+          <p class="empty-sub">Tap <strong>+ Add Habit</strong> to get started</p>
+        </div>
+
+        <!-- FAB for mobile -->
+        <button id="add-habit-fab" class="fab" aria-label="Add new habit">+</button>
+      </section>
+
+      <!-- ── Settings View ───────────────────────────────────────────── -->
+      <section id="view-settings" class="view" aria-label="Settings" hidden>
+        <header class="view-header">
+          <h1 class="view-title">Settings</h1>
+        </header>
+
+        <!-- User profile -->
+        <div class="settings-card" id="profile-card">
+          <div class="profile-avatar" id="profile-avatar" aria-hidden="true">?</div>
+          <div class="profile-info">
+            <p id="profile-name" class="profile-name">Not signed in</p>
+            <p id="profile-email" class="profile-email"></p>
+          </div>
+        </div>
+
+        <!-- Settings list -->
+        <div class="settings-list">
+          <label class="settings-row" for="dark-mode-toggle">
+            <span class="settings-row-icon" aria-hidden="true">🌙</span>
+            <span class="settings-row-text">
+              <span class="settings-row-title">Dark Mode</span>
+              <span class="settings-row-sub">Easier on the eyes at night</span>
+            </span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="dark-mode-toggle" class="toggle-input" role="switch" aria-checked="false" />
+              <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            </div>
+          </label>
+
+          <label class="settings-row" for="notif-toggle">
+            <span class="settings-row-icon" aria-hidden="true">🔔</span>
+            <span class="settings-row-text">
+              <span class="settings-row-title">Notifications</span>
+              <span class="settings-row-sub" id="notif-status-sub">Habit reminders while app is open</span>
+            </span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="notif-toggle" class="toggle-input" role="switch" aria-checked="false" />
+              <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            </div>
+          </label>
+
+          <div class="settings-row settings-row-info">
+            <span class="settings-row-icon" aria-hidden="true">ℹ️</span>
+            <span class="settings-row-text">
+              <span class="settings-row-title">Notification Limits</span>
+              <span class="settings-row-sub">Reminders only work while the app tab is open in your browser. For persistent notifications, install the app to your home screen.</span>
+            </span>
+          </div>
+
+          <button id="sign-out-btn" class="settings-row settings-row-btn" aria-label="Sign out">
+            <span class="settings-row-icon" aria-hidden="true">🚪</span>
+            <span class="settings-row-text">
+              <span class="settings-row-title">Sign Out</span>
+            </span>
+            <span class="settings-row-arrow" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <div class="settings-footer">
+          <p>Habit Tracker v1.0 &bull; Your data syncs via Firebase</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ─── Auth Screen ──────────────────────────────────────────────────── -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <img src="icon.svg" alt="Habit Tracker" width="80" height="80" class="auth-logo" />
+      <h1 class="auth-title">Habit Tracker</h1>
+      <p class="auth-sub">Build better habits, track your streaks,<br>and sync across all your devices.</p>
+      <button id="google-sign-in-btn" class="btn btn-google" aria-label="Sign in with Google">
+        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Sign in with Google
+      </button>
+      <p id="auth-error" class="auth-error" role="alert" hidden></p>
+    </div>
+  </div>
+
+  <!-- ─── Setup Warning (when Firebase not configured) ────────────────── -->
+  <div id="setup-screen" class="auth-screen" hidden>
+    <div class="auth-card setup-card">
+      <span class="setup-icon" aria-hidden="true">⚙️</span>
+      <h1 class="auth-title">Setup Required</h1>
+      <p class="auth-sub">Open <code>app.js</code> and replace the <code>FIREBASE_CONFIG</code> placeholder with your Firebase project credentials.</p>
+      <ol class="setup-steps">
+        <li>Go to <strong>firebase.google.com</strong> and create a free project</li>
+        <li>Enable <strong>Firestore Database</strong></li>
+        <li>Enable <strong>Authentication &rsaquo; Google</strong></li>
+        <li>Copy your <strong>Web App config</strong> into <code>app.js</code></li>
+      </ol>
+      <p class="setup-readme">See <code>README.md</code> for full instructions.</p>
+    </div>
+  </div>
+
+  <!-- ─── Loading Spinner ──────────────────────────────────────────────── -->
+  <div id="loading-screen" class="loading-screen" aria-live="polite" aria-label="Loading">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Loading...</p>
+  </div>
+
+  <!-- ─── Add/Edit Habit Modal ─────────────────────────────────────────── -->
+  <div id="habit-modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-sheet" id="habit-modal">
+      <div class="modal-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <button class="modal-close" id="modal-close-btn" aria-label="Close modal">✕</button>
+        <h2 id="modal-title" class="modal-title">Add Habit</h2>
+        <button id="modal-save-btn" class="btn btn-primary btn-sm">Save</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Emoji + Name row -->
+        <div class="form-row form-row-name">
+          <button type="button" id="emoji-btn" class="emoji-picker-btn" aria-label="Choose emoji">😊</button>
+          <div class="form-group flex-1">
+            <label for="habit-name" class="form-label">Habit name</label>
+            <input type="text" id="habit-name" class="form-input" placeholder="e.g. Morning run" maxlength="60" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Color swatches -->
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div id="color-swatches" class="color-swatches" role="radiogroup" aria-label="Habit color"></div>
+        </div>
+
+        <!-- Time of day segment -->
+        <div class="form-group">
+          <label class="form-label">Time of Day</label>
+          <div id="tod-segment" class="segment-control" role="radiogroup" aria-label="Time of day">
+            <button class="segment-btn active" data-value="anytime">Anytime</button>
+            <button class="segment-btn" data-value="morning">Morning</button>
+            <button class="segment-btn" data-value="afternoon">Afternoon</button>
+            <button class="segment-btn" data-value="evening">Evening</button>
+          </div>
+        </div>
+
+        <!-- Days of week -->
+        <div class="form-group">
+          <label class="form-label">Repeat on</label>
+          <div id="day-buttons" class="day-buttons" role="group" aria-label="Days of week">
+            <button class="day-btn active" data-day="0" aria-pressed="true" aria-label="Sunday">S</button>
+            <button class="day-btn active" data-day="1" aria-pressed="true" aria-label="Monday">M</button>
+            <button class="day-btn active" data-day="2" aria-pressed="true" aria-label="Tuesday">T</button>
+            <button class="day-btn active" data-day="3" aria-pressed="true" aria-label="Wednesday">W</button>
+            <button class="day-btn active" data-day="4" aria-pressed="true" aria-label="Thursday">T</button>
+            <button class="day-btn active" data-day="5" aria-pressed="true" aria-label="Friday">F</button>
+            <button class="day-btn active" data-day="6" aria-pressed="true" aria-label="Saturday">S</button>
+          </div>
+        </div>
+
+        <!-- Reminder time -->
+        <div class="form-group">
+          <label for="reminder-time" class="form-label">Reminder Time <span class="form-label-opt">(optional)</span></label>
+          <input type="time" id="reminder-time" class="form-input" />
+        </div>
+
+        <!-- Delete button (edit mode only) -->
+        <button id="modal-delete-btn" class="btn btn-danger btn-full" hidden>Delete Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Emoji Picker ─────────────────────────────────────────────────── -->
+  <div id="emoji-picker-overlay" class="modal-overlay emoji-overlay" role="dialog" aria-modal="true" aria-label="Choose emoji" hidden>
+    <div class="emoji-picker">
+      <div class="emoji-picker-header">
+        <span>Choose an Emoji</span>
+        <button id="emoji-picker-close" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div id="emoji-grid" class="emoji-grid" role="grid"></div>
+    </div>
+  </div>
+
+  <!-- ─── Toast notifications ──────────────────────────────────────────── -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

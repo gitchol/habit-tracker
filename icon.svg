@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="114" ry="114" fill="#6366f1"/>
+  <!-- Outer circle ring -->
+  <circle cx="256" cy="256" r="168" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="16"/>
+  <!-- Checkmark -->
+  <polyline points="160,264 224,328 352,184" fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Small flame spark top-right to indicate streak -->
+  <circle cx="368" cy="144" r="24" fill="#f97316"/>
+  <text x="368" y="152" text-anchor="middle" font-size="22" font-family="system-ui" fill="white">🔥</text>
+</svg>
