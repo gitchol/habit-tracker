@@ -93,6 +93,10 @@ const loadingScreen    = $('loading-screen');
 const googleSignInBtn  = $('google-sign-in-btn');
 const authError        = $('auth-error');
 
+// ─── Show / Hide helpers (bypass [hidden] CSS specificity issues) ─────────
+function hide(el) { if (el) { el.hidden = true;  el.style.display = 'none';  } }
+function show(el) { if (el) { el.hidden = false; el.style.display = '';      } }
+
 // ─── Init ────────────────────────────────────────────────────────────────
 async function init() {
   // Apply saved dark mode preference
@@ -100,9 +104,9 @@ async function init() {
 
   // If Firebase config not filled in, show setup screen
   if (!IS_CONFIGURED) {
-    loadingScreen.hidden = true;
-    authScreen.hidden = true;
-    setupScreen.hidden = false;
+    hide(loadingScreen);
+    hide(authScreen);
+    show(setupScreen);
     return;
   }
 
@@ -114,7 +118,7 @@ async function init() {
   // Register service worker
   if ('serviceWorker' in navigator) {
     try {
-      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.register('./sw.js');
     } catch(e) {
       console.warn('SW registration failed:', e);
     }
@@ -124,16 +128,16 @@ async function init() {
   onAuthStateChanged(auth, user => {
     if (user) {
       currentUser = user;
-      authScreen.hidden = true;
-      loadingScreen.hidden = false;
-      appEl.hidden = true;
+      hide(authScreen);
+      show(loadingScreen);
+      hide(appEl);
       onUserSignedIn();
     } else {
       currentUser = null;
       cleanupListeners();
-      loadingScreen.hidden = true;
-      authScreen.hidden = false;
-      appEl.hidden = true;
+      hide(loadingScreen);
+      show(authScreen);
+      hide(appEl);
     }
   });
 
@@ -170,8 +174,8 @@ function onUserSignedIn() {
   subscribeHabits();
   subscribeCompletions();
   renderView(currentView);
-  loadingScreen.hidden = true;
-  appEl.hidden = false;
+  hide(loadingScreen);
+  show(appEl);
 }
 
 function cleanupListeners() {
@@ -1105,9 +1109,9 @@ function showToast(message, type = '') {
 
 init().catch(err => {
   console.error('Init error:', err);
-  loadingScreen.hidden = true;
+  hide(loadingScreen);
   const authErr = $('auth-error');
-  authErr.textContent = 'Failed to initialize app. Check your Firebase config.';
-  authErr.hidden = false;
-  authScreen.hidden = false;
+  authErr.textContent = 'Failed to load: ' + err.message;
+  show(authErr);
+  show(authScreen);
 });
