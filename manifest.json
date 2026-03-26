@@ -2,11 +2,12 @@
   "name": "Habit Tracker",
   "short_name": "Habits",
   "description": "Track your daily habits and build streaks across all your devices",
-  "start_url": "/",
+  "start_url": "/habit-tracker/",
+  "scope": "/habit-tracker/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#6366f1",
-  "theme_color": "#6366f1",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "icon.svg",
