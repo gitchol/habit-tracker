@@ -58,10 +58,10 @@ const EMOJIS = [
 ];
 
 const TIME_LABELS = {
-  morning: '🌅 Morning',
-  afternoon: '☀️ Afternoon',
-  evening: '🌆 Evening',
-  anytime: '⏰ Anytime'
+  morning:   'Morning',
+  afternoon: 'Afternoon',
+  evening:   'Evening',
+  anytime:   'Anytime'
 };
 
 const TIME_ORDER = ['morning', 'afternoon', 'evening', 'anytime'];
@@ -791,8 +791,7 @@ function renderHabitsManageView() {
 function renderSettingsView() {
   updateProfileUI();
   // Sync dark toggle state with current mode
-  const isDark = document.body.classList.contains('dark') ||
-    (!document.body.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = !document.body.classList.contains('light');
   const darkToggle = $('dark-mode-toggle');
   darkToggle.checked = isDark;
   darkToggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
@@ -1025,24 +1024,13 @@ function closeEmojiPicker() {
 
 function applyDarkModePreference() {
   const saved = localStorage.getItem('darkMode');
-  if (saved === 'dark') {
-    document.body.classList.add('dark');
-    document.body.classList.remove('light');
-  } else if (saved === 'light') {
-    document.body.classList.add('light');
-    document.body.classList.remove('dark');
-  }
-  // else: let prefers-color-scheme CSS handle it
+  // Default to dark (Nothing aesthetic) unless user explicitly chose light
+  applyDarkMode(saved !== 'light');
 }
 
 function applyDarkMode(isDark) {
-  if (isDark) {
-    document.body.classList.add('dark');
-    document.body.classList.remove('light');
-  } else {
-    document.body.classList.add('light');
-    document.body.classList.remove('dark');
-  }
+  document.body.classList.toggle('light', !isDark);
+  document.body.classList.remove('dark');
   // Update meta theme-color
   document.querySelector('meta[name="theme-color"]').content = isDark ? '#1e293b' : '#6366f1';
 }
