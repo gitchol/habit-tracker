@@ -28,7 +28,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore,
@@ -113,6 +115,7 @@ async function init() {
   // Initialize Firebase
   const app = initializeApp(FIREBASE_CONFIG);
   auth = getAuth(app);
+  await setPersistence(auth, browserLocalPersistence);
   db = getFirestore(app);
 
   // Register service worker
