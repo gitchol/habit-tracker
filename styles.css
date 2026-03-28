@@ -587,6 +587,72 @@ label.settings-row   { cursor: pointer; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Weekly Summary Card ────────────────────────────── */
+.weekly-summary {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.weekly-summary-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.weekly-title {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim);
+}
+
+.weekly-pct { font-size: 22px; font-weight: 700; }
+.weekly-pct-unit { font-size: 11px; color: var(--text-dim); margin-left: 2px; }
+
+.weekly-days {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+
+.weekly-day {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+
+.weekly-day-label {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+}
+
+.weekly-day.today .weekly-day-label { color: var(--accent); }
+
+.weekly-day-dot {
+  width: 100%; aspect-ratio: 1; max-width: 32px;
+}
+
+.weekly-day-dot.done    { background: var(--accent); }
+.weekly-day-dot.partial { background: var(--accent-bg); border: 1px solid var(--accent); }
+.weekly-day-dot.missed  { background: var(--border); }
+.weekly-day-dot.future  { border: 1px solid var(--border); }
+.weekly-day-dot.empty   { border: 1px dashed var(--border-mid); }
+
+/* ─── Drag Reorder ────────────────────────────────────── */
+.drag-handle {
+  padding: 8px 14px 8px 0;
+  color: var(--border-mid);
+  font-size: 18px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.drag-handle:hover { color: var(--text-dim); }
+
+.habit-manage-item.is-dragging {
+  opacity: 0.35;
+  background: var(--accent-bg);
+}
+
+.habit-manage-item.drag-above { border-top: 2px solid var(--accent); }
+
 /* ─── Desktop ─────────────────────────────────────────── */
 @media (min-width: 768px) {
   .app { flex-direction: row; }

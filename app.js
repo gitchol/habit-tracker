@@ -486,6 +486,9 @@ function renderTodayView() {
   $('progress-bar-label').textContent = `${doneCount} / ${total} done`;
   $('progress-bar-wrap').setAttribute('aria-valuenow', pct);
 
+  // Weekly summary
+  renderWeeklySummary();
+
   // Groups
   const groups = $('today-habit-groups');
   groups.innerHTML = '';
@@ -585,6 +588,63 @@ function buildTodayHabitItem(habit, dateStr) {
   });
 
   return item;
+}
+
+// ─── Weekly Summary ──────────────────────────────────────────────────────
+
+function renderWeeklySummary() {
+  const today = new Date();
+  const todayDow = today.getDay();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - todayDow); // Sunday
+
+  const DAY_LABELS = ['S','M','T','W','T','F','S'];
+  let totalScheduled = 0, totalDone = 0;
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const key = dateKey(d);
+    const isToday = i === todayDow;
+    const isFuture = d > today && !isToday;
+    const dayHabits = habitsForDate(key);
+    const done = dayHabits.filter(h => isHabitDoneOnDate(h.id, key)).length;
+    const total = dayHabits.length;
+
+    if (!isFuture && total > 0) { totalScheduled += total; totalDone += done; }
+
+    let status = 'empty';
+    if (isFuture) status = 'future';
+    else if (total === 0) status = 'empty';
+    else if (done === total) status = 'done';
+    else if (done > 0) status = 'partial';
+    else status = 'missed';
+
+    return { label: DAY_LABELS[i], isToday, status };
+  });
+
+  const pct = totalScheduled > 0 ? Math.round((totalDone / totalScheduled) * 100) : 0;
+
+  let el = $('weekly-summary');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'weekly-summary';
+    el.className = 'weekly-summary';
+    $('progress-bar-wrap').after(el);
+  }
+
+  el.innerHTML = `
+    <div class="weekly-summary-header">
+      <span class="weekly-title">This Week</span>
+      <span class="weekly-pct">${pct}<span class="weekly-pct-unit">%</span></span>
+    </div>
+    <div class="weekly-days">
+      ${days.map(d => `
+        <div class="weekly-day ${d.isToday ? 'today' : ''}">
+          <span class="weekly-day-label">${d.label}</span>
+          <div class="weekly-day-dot ${d.status}"></div>
+        </div>`).join('')}
+    </div>`;
 }
 
 // ─── History View ─────────────────────────────────────────────────────────
@@ -749,66 +809,129 @@ function renderHabitsManageView() {
   list.innerHTML = '';
 
   if (habits.length === 0) {
-    $('habits-empty').hidden = false;
-    list.hidden = true;
+    show($('habits-empty'));
+    hide(list);
     return;
   }
 
-  $('habits-empty').hidden = true;
-  list.hidden = false;
+  hide($('habits-empty'));
+  show(list);
 
   habits.forEach(habit => {
     const item = document.createElement('div');
-    item.className = 'manage-habit-item';
-    item.setAttribute('tabindex', '0');
-    item.setAttribute('role', 'button');
-    item.setAttribute('aria-label', `Edit habit: ${habit.name}`);
+    item.className = 'habit-manage-item';
+    item.dataset.id = habit.id;
 
-    const dot = document.createElement('div');
-    dot.className = 'manage-habit-dot';
-    dot.style.background = habit.color || COLORS[5];
+    const handle = document.createElement('div');
+    handle.className = 'drag-handle';
+    handle.setAttribute('aria-label', 'Drag to reorder');
+    handle.innerHTML = '&#8801;&#8801;'; // ≡≡
 
-    const icon = document.createElement('span');
-    icon.style.fontSize = '22px';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = habit.icon || '⭐';
+    const emoji = document.createElement('span');
+    emoji.className = 'habit-manage-emoji';
+    emoji.setAttribute('aria-hidden', 'true');
+    emoji.textContent = habit.icon || '⭐';
 
     const info = document.createElement('div');
-    info.className = 'manage-habit-info';
+    info.className = 'habit-manage-info';
 
     const name = document.createElement('div');
-    name.className = 'manage-habit-name';
+    name.className = 'habit-manage-name';
     name.textContent = habit.name;
 
     const meta = document.createElement('div');
-    meta.className = 'manage-habit-meta';
-    const days = habit.days && habit.days.length < 7
+    meta.className = 'habit-manage-meta';
+    const daysText = habit.days && habit.days.length < 7
       ? habit.days.map(d => DAY_NAMES[d]).join(', ')
       : 'Every day';
-    const tod = TIME_LABELS[habit.timeOfDay || 'anytime'];
-    meta.textContent = `${tod} · ${days}`;
+    meta.textContent = `${TIME_LABELS[habit.timeOfDay || 'anytime']} · ${daysText}`;
 
     info.appendChild(name);
     info.appendChild(meta);
 
     const arrow = document.createElement('span');
-    arrow.className = 'manage-habit-arrow';
+    arrow.className = 'habit-manage-arrow';
     arrow.textContent = '›';
-    arrow.setAttribute('aria-hidden', 'true');
 
-    item.appendChild(dot);
-    item.appendChild(icon);
+    item.appendChild(handle);
+    item.appendChild(emoji);
     item.appendChild(info);
     item.appendChild(arrow);
 
-    const openEdit = () => openHabitModal(habit.id);
-    item.addEventListener('click', openEdit);
-    item.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(); }
+    item.addEventListener('click', e => {
+      if (e.target.closest('.drag-handle')) return;
+      openHabitModal(habit.id);
     });
 
     list.appendChild(item);
   });
+
+  initDragSort(list);
+}
+
+// ─── Drag-to-reorder ──────────────────────────────────────────────────────
+
+function initDragSort(listEl) {
+  let dragging = null;
+
+  function getItems() {
+    return [...listEl.querySelectorAll('.habit-manage-item[data-id]')];
+  }
+
+  listEl.addEventListener('touchstart', e => {
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    e.preventDefault();
+    dragging = handle.closest('.habit-manage-item');
+    dragging.classList.add('is-dragging');
+  }, { passive: false });
+
+  listEl.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const items = getItems().filter(el => el !== dragging);
+
+    // Remove previous drag-above markers
+    getItems().forEach(el => el.classList.remove('drag-above'));
+
+    // Find insertion point
+    let insertBefore = null;
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      if (y < rect.top + rect.height / 2) { insertBefore = item; break; }
+    }
+
+    if (insertBefore) {
+      insertBefore.classList.add('drag-above');
+      listEl.insertBefore(dragging, insertBefore);
+    } else {
+      listEl.appendChild(dragging);
+    }
+  }, { passive: false });
+
+  listEl.addEventListener('touchend', async () => {
+    if (!dragging) return;
+    dragging.classList.remove('is-dragging');
+    getItems().forEach(el => el.classList.remove('drag-above'));
+
+    const newOrder = getItems().map((el, i) => ({ id: el.dataset.id, order: i }));
+    dragging = null;
+    await saveHabitOrder(newOrder);
+  });
+}
+
+async function saveHabitOrder(orderList) {
+  if (!currentUser) return;
+  try {
+    await Promise.all(
+      orderList.map(({ id, order }) =>
+        setDoc(doc(db, 'users', currentUser.uid, 'habits', id), { order }, { merge: true })
+      )
+    );
+  } catch (err) {
+    showToast('Failed to save order', 'error');
+  }
 }
 
 // ─── Settings View ───────────────────────────────────────────────────────
