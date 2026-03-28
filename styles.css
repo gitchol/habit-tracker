@@ -52,6 +52,7 @@ input, textarea, select { font-family: var(--font); }
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* dynamic viewport — fixes iOS address bar bug */
   overflow: hidden;
 }
 
@@ -171,8 +172,12 @@ input, textarea, select { font-family: var(--font); }
 
 /* ─── Main Content ────────────────────────────────────── */
 .main {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 8px);
+  flex: 1;
+  min-height: 0; /* critical: allows flex child to shrink and scroll */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 32px);
 }
 .view { padding: 0 20px; max-width: 640px; margin: 0 auto; }
 
@@ -329,11 +334,33 @@ input, textarea, select { font-family: var(--font); }
   font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.1s;
 }
 .cal-day:empty { cursor: default; }
-.cal-day.is-today   { border: 1px solid var(--accent); color: var(--accent); }
-.cal-day.is-all-done{ background: var(--accent); color: #fff; }
-.cal-day.is-partial { background: var(--accent-bg); color: var(--accent); }
-.cal-day.is-future  { color: var(--border-mid); cursor: default; }
-.cal-day.is-selected{ outline: 1px solid var(--text); }
+.cal-day.is-today    { border: 1px solid var(--accent); color: var(--accent); }
+.cal-day.is-all-done { background: var(--accent); color: #fff; }
+.cal-day.is-partial  { background: var(--accent-bg); color: var(--accent); }
+.cal-day.is-missed   { background: var(--border); color: var(--text-dim); } /* had habits, did none */
+.cal-day.is-future   { color: var(--border-mid); cursor: default; }
+.cal-day.is-selected { outline: 1px solid var(--text); }
+
+/* ─── Calendar Legend ─────────────────────────────────── */
+.cal-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+.cal-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.cal-legend-dot {
+  width: 10px; height: 10px; flex-shrink: 0;
+}
+.cal-legend-dot.done    { background: var(--accent); }
+.cal-legend-dot.partial { background: var(--accent-bg); border: 1px solid var(--accent); }
+.cal-legend-dot.missed  { background: var(--border); }
+.cal-legend-dot.empty   { border: 1px solid var(--border-mid); }
 
 /* ─── Day Detail ──────────────────────────────────────── */
 .day-detail { border: 1px solid var(--border-mid); margin-top: 16px; padding: 16px; }

@@ -592,6 +592,21 @@ function buildTodayHabitItem(habit, dateStr) {
 function renderHistoryView() {
   $('cal-month-label').textContent = `${MONTH_NAMES[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
   renderCalendarGrid();
+
+  // Legend
+  let legend = $('cal-legend');
+  if (!legend) {
+    legend = document.createElement('div');
+    legend.id = 'cal-legend';
+    legend.className = 'cal-legend';
+    legend.innerHTML = `
+      <div class="cal-legend-item"><div class="cal-legend-dot done"></div>All done</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot partial"></div>Partial</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot missed"></div>Missed</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot empty"></div>No habits</div>`;
+    $('calendar-grid').after(legend);
+  }
+
   if (selectedCalDay) {
     renderDayDetail(selectedCalDay);
   } else {
@@ -640,11 +655,14 @@ function renderCalendarGrid() {
     cell.setAttribute('tabindex', isFuture ? '-1' : '0');
     cell.textContent = d;
 
-    if (isToday) cell.classList.add('today');
-    if (isFuture) cell.classList.add('future');
-    if (!isFuture && allDone) cell.classList.add('full');
-    if (!isFuture && someDone) cell.classList.add('partial');
-    if (isSelected) cell.classList.add('selected');
+    const isMissed = !isFuture && dayHabits.length > 0 && doneCount === 0 && key !== todayStr;
+
+    if (isToday)            cell.classList.add('is-today');
+    if (isFuture)           cell.classList.add('is-future');
+    if (!isFuture && allDone)  cell.classList.add('is-all-done');
+    if (!isFuture && someDone) cell.classList.add('is-partial');
+    if (isMissed)           cell.classList.add('is-missed');
+    if (isSelected)         cell.classList.add('is-selected');
 
     cell.setAttribute('aria-label', `${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - ${
       isFuture ? 'future' : allDone ? 'all done' : someDone ? `${doneCount} of ${dayHabits.length} done` : 'not started'
